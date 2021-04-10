@@ -15,32 +15,77 @@ json配置格式如下
     }
 }
 ```
-例如
+编写好后，只需要简单的调用两个方法就可以获得系统命令行的格式化输出和参数map
+上述配置输出如下
+```
+G:\goProject\go-get-argsmap-from-commandline\yourmode>go run .
+2021/04/11 04:24:42 argsmap ------------Command line configuration------------------
+2021/04/11 04:24:42 argsmap map[]
+Usage:
+|------------|----------------------------|----------------|------------------
+| flag       | usage                      | expect         | default
+|------------|----------------------------|----------------|------------------
+| -flag1     | Teach you how to use flag1 | user expect v1 | default value v1
+| -flag2     | Teach you how to use flag1 |                |
+|------------|----------------------------|----------------|------------------
+------------Get Map--------------
+&{map[] 0xf36820}
+
+```
+
+例如这个配置
 ```
 {
   "-h": {
-    "usage": "显示帮助",
+    "usage": "show help",
     "must_have_value": false
   },
   "-p": {
     "value": "8080",
-    "usage": "展示端口",
-    "pattern": "\\d+",
-    "expect": "纯数字",
-    "err": "端口指定错误！"
+    "usage": "server port",
+    "pattern": "^[0-9]+$",
+    "expect": "pure number",
+    "err": "invalid port"
   },
   "-r": {
     "value": "./",
-    "usage": "服务器根目录",
-    "expect": "正确的地址格式",
-    "err": "该地址有误！"
+    "usage": "web root",
+    "err": "invalid web root"
+  },
+  "-a": {
+    "value": "0.0.0.0",
+    "usage": "listen address",
+    "pattern": "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}",
+    "expect": "ipv4 address, format like 0.0.0.0",
+    "err": "invalid address!"
   },
   "-c": {
-    "usage": "配置文件目录",
-    "err": "配置地址有误"
+    "usage": "path to server configuration",
+    "err": "invalid config path"
   }
 }
 ```
+
+格式化输出如下
+
+```
+
+G:\goProject\go-get-argsmap-from-commandline\yourmode>go run .
+2021/04/11 04:28:47 argsmap ------------Command line configuration------------------
+2021/04/11 04:28:47 argsmap map[]
+Usage:
+|------------|------------------------------|-----------------------------------|------------
+| flag       | usage                        | expect                            | default
+|------------|------------------------------|-----------------------------------|------------
+| -p         | server port                  | pure number                       | 8080
+| -r         | web root                     |                                   | ./
+| -a         | listen address               | ipv4 address, format like 0.0.0.0 | 0.0.0.0
+| -c         | path to server configuration |                                   |
+| -h         | show help                    |                                   |
+|------------|------------------------------|-----------------------------------|------------
+
+```
+
 # 用法
  现有的DEMO
  - 简单的HTTP服务器 https://github.com/tignioj/simple-go-httpserver
