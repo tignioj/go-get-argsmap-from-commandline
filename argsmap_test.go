@@ -7,10 +7,12 @@ import (
 
 func TestGetCommandLineArgMap(t *testing.T) {
 	args := []string{"filename", "-flag1", "user_input_v1", "-flag2"}
-	argmap, err := GetCommandLineArgMap("test.json", args)
-	fmt.Println(argmap)
+	clobj, err := NewCommandLineObj("test.json", args)
 	if err != nil {
 		t.Fatal(args, err)
+	} else {
+		clobj.ShowHelp()
+		fmt.Println(clobj.GetCommandLineMap)
 	}
 
 }
