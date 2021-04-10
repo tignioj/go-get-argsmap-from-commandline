@@ -1,23 +1,22 @@
 {
   "-h": {
-    "usage": "显示帮助",
+    "usage": "show help",
     "must_have_value": false
   },
   "-p": {
     "value": "8080",
-    "usage": "展示端口",
+    "usage": "server port",
     "pattern": "\\d+",
-    "expect": "纯数字",
-    "err": "端口指定错误！"
+    "expect": "pure number",
+    "err": "invalid port"
   },
   "-r": {
     "value": "./",
-    "usage": "服务器根目录",
-    "expect": "正确的地址格式",
-    "err": "该地址有误！"
+    "usage": "web root",
+    "err": "invalid web root"
   },
   "-c": {
-    "usage": "配置文件目录",
-    "err": "配置地址有误"
+    "usage": "path to server configuration",
+    "err": "invalid config path"
   }
 }

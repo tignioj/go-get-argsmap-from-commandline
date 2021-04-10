@@ -10,17 +10,39 @@ import (
 	"strings"
 )
 
-func GetCommandLineArgMap(fileName string, args []string) (map[string]string, error) {
-	var argHelpMap = make(map[string]oneArg)
+type commandLineObj struct {
+	GetCommandLineMap map[string]string
+	ShowHelp          func()
+}
 
+func NewCommandLineObj(fileName string, args []string) (*commandLineObj, error) {
+	var argHelpMap = make(map[string]OneArg)
 	b := loadFile(fileName)
 	jserr := json.Unmarshal(b, &argHelpMap)
 	if jserr != nil {
-		fmt.Printf("解析文件%s出错！\n", fileName)
+		fmt.Printf("An error occured when parse file':%s\n'", fileName)
 	}
+	m, err := GetCommandLineArgMap(argHelpMap, args)
+	if err != nil {
+		log.Fatal("An error occurred while parsing")
+	}
+	c := commandLineObj{
+		GetCommandLineMap: m,
+		ShowHelp: func() {
+			fmt.Println("Usage:")
+			f := "    %-10s%-20s%-20s%-20s\n"
+			fmt.Printf(f, "flag", "usage", "expect", "default")
+			for k, v := range argHelpMap {
+				fmt.Printf(f, k, v.ArgUsage, v.ValueExpect, v.ArgValue)
+			}
+		},
+	}
+	return &c, nil
+}
 
+func GetCommandLineArgMap(argHelpMap map[string]OneArg, args []string) (map[string]string, error) {
+	//var argHelpMap = make(map[string]OneArg)
 	var userInputArgMap = make(map[string]string)
-
 	if len(os.Args) > 1 {
 		for i := 1; i < len(args); i++ {
 			flag := strings.TrimSpace(args[i])
@@ -28,28 +50,28 @@ func GetCommandLineArgMap(fileName string, args []string) (map[string]string, er
 				if usage.MustHaveValue {
 					v, err := getFlagValueFromArgs(usage, i, args)
 					if err != nil {
-						showError(usage.ArgValueErrorMsg + ",用户输入值为:'" + v + "', 期望值为:" + usage.ValueExpect)
+						showError(usage.ArgValueErrorMsg + ",User Input:'" + v + "', Expect for:" + usage.ValueExpect)
 					} else {
-						fmt.Println("指定成功:", flag, v)
+						log.Println("argsmap", "Binding success:", flag, v)
 						userInputArgMap[flag] = v
 						i++
 					}
 				} else {
-					fmt.Println("指定成功:", flag)
+					log.Println("argsmap", "Bidding success:", flag)
 					userInputArgMap[flag] = "1"
 				}
 			} else {
-				log.Println("argsmap:", "未知参数:" + flag)
-				return userInputArgMap, errors.New("未知参数:" + flag)
+				log.Println("argsmap:", "Unknown param:"+flag)
+				return userInputArgMap, errors.New("Unknown param:" + flag)
 			}
 		}
 	}
-	fmt.Println("------------命令行配置------------------")
-	fmt.Println(userInputArgMap)
+	log.Println("argsmap", "------------Command line configuration------------------")
+	log.Println("argsmap", userInputArgMap)
 	return userInputArgMap, nil
 }
 
-type oneArg struct {
+type OneArg struct {
 	ArgFlag      string `json:"flag"`
 	ValuePattern string `json:"pattern"`
 	/*是否必须有值，比如-h显示帮助就不需要，而-p 8888指定端口则必须指定，当必须指定的时候该值为true*/
@@ -63,32 +85,30 @@ type oneArg struct {
 /**
 为struct添加默认值，该方法会被自动调用
 */
-func (o *oneArg) UnmarshalJSON(b []byte) error {
-	type xOneArg oneArg
+func (o *OneArg) UnmarshalJSON(b []byte) error {
+	type xOneArg OneArg
 	/*是否必须有值，比如-h显示帮助就不需要，而-p 8888指定端口则必须指定，当必须指定的时候该值为true, 不指定则为false*/
 	xo := &xOneArg{MustHaveValue: true}
 	if err := json.Unmarshal(b, xo); err != nil {
 		return err
 	}
-	*o = oneArg(*xo)
+	*o = OneArg(*xo)
 	return nil
 }
 
 func loadFile(filePath string) []byte {
 	body, err := ioutil.ReadFile(filePath)
-
 	if err != nil {
-		fmt.Println("文件读取出错！" + filePath)
+		showError("Failed to load file:" + filePath)
 		return []byte{}
 	}
 	return body
 }
 func showError(msg string) {
-	fmt.Println(msg)
+	log.Fatal("argsmap", msg)
 }
 
-
-func getFlagValueFromArgs(usage oneArg, i int, args []string) (string, error) {
+func getFlagValueFromArgs(usage OneArg, i int, args []string) (string, error) {
 	if i >= (len(args) - 1) {
 		return "", errors.New(usage.ArgValueErrorMsg)
 	} else {
