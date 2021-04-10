@@ -24,7 +24,7 @@ func parseByte(b []byte, args []string) (*CommandLineObj, error) {
 	}
 	m, err := GetCommandLineArgMap(argHelpMap, args)
 	if err != nil {
-		return nil, errors.New("An error occurred while parsing from map:" + fmt.Sprint(argHelpMap))
+		return nil, errors.New("An error occurred when parsing from args:"  + err.Error())
 	}
 	f := getFormatArgMap(argHelpMap, 10, 50)
 	c := CommandLineObj{
