@@ -1,5 +1,5 @@
 # 封装命令行参数
-以前我们需要手动去提取判断用户的命令行参数，比如 `./server -p 8090 -r --noauth./` 这里有三个参数，2个值，使用本项目，经过自定义json配置封装到map中
+以前我们需要手动去提取判断用户的命令行参数，比如 `./server.exe -p 8090 -r ./` 这里有2个参数，2个值，使用本项目，经过自定义json配置封装到map中
 json配置格式如下
 ```json
 {
@@ -41,10 +41,164 @@ json配置格式如下
   }
 }
 ```
-
 # 用法
-## 在其它模块上使用本模块
+ 现有的DEMO
+ - 简单的HTTP服务器 https://github.com/tignioj/simple-go-httpserver
+ 
 
+## 方式一：使用`go get`
+### 1. 初始化你的项目
+
+ 你的项目结构如下
+
+
+
+        |-yourmodule
+        |   -youcode.go
+        |
+
+
+
+```
+cd yourmodule
+go mod init "mymodule.com/mymodule"
+```
+ 此时你的目录下会多一个文件`go.mod`
+
+
+        |-yourmodule
+        |   -youcode.go
+        |   -go.mod
+        |
+        
+        
+
+其中go.mod如下
+```
+module mymodule.com/mymodul
+
+go 1.16
+
+```
+
+### 2. 在执行go get获取本项目
+```
+go get github.com/tignioj/go-get-argsmap-from-commandline.git
+```
+
+此时你的`go.mod`
+```
+module mymodule.com/mymodul
+
+go 1.16
+
+require github.com/tignioj/go-get-argsmap-from-commandline v1.0.1-0.20210410193735-97119a2e5a7c // indirect
+
+```
+  
+### 3. 在自己的模块中调用本项目的方法
+
+#### 1. 导包
+
+`import "github.com/tignioj/go-get-argsmap-from-commandline"`
+
+#### 2. 调用
+```
+	argMap, err := argsmap.NewCommandLineObj("help.json", os.Args)
+	if err != nil {
+		log.Fatal(err)
+	}
+	m := argMap.GetCommandLineMap
+
+	for k, v := range m {
+		fmt.Println(k, v)
+	}
+	argMap.ShowHelp()
+```
+
+如下
+```go
+package main
+
+import (
+	"fmt"
+	"github.com/tignioj/go-get-argsmap-from-commandline"
+	"log"
+	"os"
+)
+
+func main() {
+	argMap, err := argsmap.NewCommandLineObj("help.json", os.Args)
+	if err != nil {
+		log.Fatal(err)
+	}
+	m := argMap.GetCommandLineMap
+
+	for k, v := range m {
+		fmt.Println(k, v)
+	}
+	argMap.ShowHelp()
+
+	fmt.Println("------------Get Map--------------")
+	fmt.Println(argMap)
+}
+```
+#### 编写帮助文档，注意到这里的`help.json`，我们需要自己编写以便于生成帮助文档
+
+比如
+
+```json
+{
+  "-h": { 
+    "usage": "show help",
+    "must_have_value": false
+  },
+  "-p": {
+    "value": "8080",
+    "usage": "server port",
+    "pattern": "^[0-9]+$",
+    "expect": "pure number",
+    "err": "invalid port"
+  },
+  "-r": {
+    "value": "./",
+    "usage": "web root",
+    "err": "invalid web root"
+  },
+  "-a": {
+    "value": "0.0.0.0",
+    "usage": "listen address",
+    "pattern": "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}",
+    "expect": "ipv4 address, format like 0.0.0.0",
+    "err": "invalid address!"
+  },
+  "-c": {
+    "usage": "path to server configuration",
+    "err": "invalid config path"
+  }
+}
+```
+
+看起来就是这样的
+```
+
+G:\goProject\go-get-argsmap-from-commandline\yourmode>go run .
+2021/04/11 03:40:02 argsmap ------------Command line configuration------------------
+2021/04/11 03:40:02 argsmap map[]
+Usage:
+|------------|------------------------------|-----------------------------------|------------
+| flag       | usage                        | expect                            | default
+|------------|------------------------------|-----------------------------------|------------
+| -h         | show help                    |                                   |
+| -p         | server port                  | pure number                       | 8080
+| -r         | web root                     |                                   | ./
+| -a         | listen address               | ipv4 address, format like 0.0.0.0 | 0.0.0.0
+| -c         | path to server configuration |                                   |
+|------------|------------------------------|-----------------------------------|------------
+
+```
+
+## 方式二：本地用法：在其它模块上使用本模块
 ### 1. 先下载本模块到本地，项目结构如下
 
     
