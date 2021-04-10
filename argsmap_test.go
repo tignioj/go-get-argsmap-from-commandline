@@ -14,5 +14,4 @@ func TestGetCommandLineArgMap(t *testing.T) {
 		clobj.ShowHelp()
 		fmt.Println(clobj.GetCommandLineMap)
 	}
-
 }

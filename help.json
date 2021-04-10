@@ -6,7 +6,7 @@
   "-p": {
     "value": "8080",
     "usage": "server port",
-    "pattern": "\\d+",
+    "pattern": "^[0-9]+$",
     "expect": "pure number",
     "err": "invalid port"
   },
@@ -14,6 +14,13 @@
     "value": "./",
     "usage": "web root",
     "err": "invalid web root"
+  },
+  "-a": {
+    "value": "0.0.0.0",
+    "usage": "listen address",
+    "pattern": "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}",
+    "expect": "format like 0.0.0.0",
+    "err": "invalid address!"
   },
   "-c": {
     "usage": "path to server configuration",
