@@ -1,0 +1,12 @@
+{
+    "-flag1": {
+        "usage":"Teach you how to use flag1",
+        "value":"default value v1",
+        "expect": "user expect v1",
+        "err":"show error message when not match pattern1"
+    },
+    "-flag2": {
+        "usage":"Teach you how to use flag1",
+        "must_have_value": false
+    }
+}
