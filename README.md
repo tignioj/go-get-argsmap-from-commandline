@@ -148,17 +148,9 @@ require github.com/tignioj/go-get-argsmap-from-commandline v1.0.1-0.202104101937
 `import "github.com/tignioj/go-get-argsmap-from-commandline"`
 
 #### 2. 调用
-```
-	argMap, err := argsmap.NewCommandLineObj("help.json", os.Args)
-	if err != nil {
-		log.Fatal(err)
-	}
-	m := argMap.GetCommandLineMap
-
-	for k, v := range m {
-		fmt.Println(k, v)
-	}
-	argMap.ShowHelp()
+##### 构造方式1， 通过文件
+```go
+argMap, err := argsmap.NewCommandLineObj("help.json", os.Args)
 ```
 
 如下
@@ -188,6 +180,67 @@ func main() {
 	fmt.Println(argMap)
 }
 ```
+
+##### 构造方式二：通过json字符串
+
+```go
+argMap, err := argsmap.NewCommandLineObjByJSON(helpJSON, os.Args)
+```
+如下
+```go
+package main
+
+import (
+	"fmt"
+	"github.com/tignioj/go-get-argsmap-from-commandline"
+	"log"
+	"os"
+)
+
+var helpJSON = `
+{
+  "-h": {
+    "usage": "show help",
+    "must_have_value": false
+  },
+  "-p": {
+    "value": "8080",
+    "usage": "server port",
+    "pattern": "^[0-9]+$",
+    "expect": "pure number",
+    "err": "invalid port"
+  },
+  "-r": {
+    "value": "./",
+    "usage": "web root",
+    "err": "invalid web root"
+  },
+  "-c": {
+    "usage": "path to server configuration",
+    "err": "invalid config path",
+    "value": "server-config.json"
+  }
+}
+`
+
+func main() {
+	argMap, err := argsmap.NewCommandLineObjByJSON(helpJSON, os.Args)
+	if err != nil {
+		log.Println("yourmode", err)
+	}
+	m := argMap.GetCommandLineMap
+
+	for k, v := range m {
+		fmt.Println(k, v)
+	}
+	argMap.ShowHelp()
+
+	fmt.Println("------------Get Map--------------")
+	fmt.Println(argMap)
+}
+```
+
+
 #### 编写帮助文档，注意到这里的`help.json`，我们需要自己编写以便于生成帮助文档
 
 比如
@@ -285,7 +338,7 @@ replace tignioj.io/argsmap => ../argsmap
 require tignioj.io/argsmap v0.0.0-00010101000000-000000000000
 ```
 
-### 5. 直接你的模块代码`youcode.go`中调用
+### 5. 直接你的模块代码`youcode.go`中调用同上
 
 ```go
 package main

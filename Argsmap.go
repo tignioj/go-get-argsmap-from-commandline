@@ -16,12 +16,11 @@ type commandLineObj struct {
 	ShowHelp          func()
 }
 
-func NewCommandLineObj(fileName string, args []string) (*commandLineObj, error) {
+func parseByte(b []byte, args []string) (*commandLineObj, error) {
 	var argHelpMap = make(map[string]OneArg)
-	b := loadFile(fileName)
 	jserr := json.Unmarshal(b, &argHelpMap)
 	if jserr != nil {
-		return nil, errors.New("An error occurred while parsing file:" + fileName)
+		return nil, errors.New("An error occurred while parsing file")
 	}
 	m, err := GetCommandLineArgMap(argHelpMap, args)
 	if err != nil {
@@ -44,6 +43,41 @@ func NewCommandLineObj(fileName string, args []string) (*commandLineObj, error) 
 		},
 	}
 	return &c, nil
+}
+
+func NewCommandLineObjByJSON(jsonString string, args []string) (*commandLineObj, error) {
+	b := []byte(jsonString)
+	return parseByte(b, args)
+}
+
+
+
+func NewCommandLineObj(fileName string, args []string) (*commandLineObj, error) {
+	b, err := loadFile(fileName)
+	if err != nil {
+		/* 帮助文件找不到，则手动封装map*/
+		return wrapOnlyArgs(args)
+	}
+	return parseByte(b, args)
+}
+
+func wrapOnlyArgs(args []string) (*commandLineObj, error) {
+	var commandLineMap = make(map[string]string)
+	for i := 1; i < len(args); i++ {
+		k:= args[i]
+		v := ""
+		if i< len(args) - 1 {
+			i++
+			v = args[i]
+		}
+		commandLineMap[k] = v
+	}
+	return &commandLineObj{
+		GetCommandLineMap: commandLineMap,
+		ShowHelp: func() {
+			fmt.Println("Not provide help file.")
+		},
+	}, nil
 }
 
 func getFormatArgMap(argHelpMap map[string]OneArg, min int, max int) string {
@@ -97,7 +131,7 @@ func GetCommandLineArgMap(argHelpMap map[string]OneArg, args []string) (map[stri
 					v, err := getFlagValueFromArgs(usage, i, args)
 					if err != nil {
 						//showError(usage.ArgValueErrorMsg + ",User Input:'" + v + "', Expect for:" + usage.ValueExpect)
-						showError(err)
+						return nil, err
 					} else {
 						log.Println("argsmap", "Binding success:", flag, v)
 						userInputArgMap[flag] = v
@@ -149,17 +183,18 @@ func (o *OneArg) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func loadFile(filePath string) []byte {
+func loadFile(filePath string) ([]byte, error) {
 	body, err := ioutil.ReadFile(filePath)
 	if err != nil {
-		showError(errors.New("Failed to load file:" + filePath))
-		return []byte{}
+		return nil, errors.New("Failed to load file:" + filePath)
 	}
-	return body
+	return body, nil
+
 }
-func showError(msg error) {
-	log.Fatal("argsmap:", msg)
-}
+
+//func showError(msg error) {
+//	log.Fatal("argsmap:", msg)
+//}
 
 func getFlagValueFromArgs(usage OneArg, i int, args []string) (string, error) {
 	if i >= (len(args) - 1) {
