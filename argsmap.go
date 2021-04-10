@@ -27,18 +27,57 @@ func NewCommandLineObj(fileName string, args []string) (*commandLineObj, error) 
 	if err != nil {
 		return nil, errors.New("An error occurred while parsing from map:" + fmt.Sprint(argHelpMap))
 	}
+	f := getFormatArgMap(argHelpMap, 10, 50)
 	c := commandLineObj{
 		GetCommandLineMap: m,
 		ShowHelp: func() {
 			fmt.Println("Usage:")
-			f := "    %-10s%-20s%-20s%-20s\n"
-			fmt.Printf(f, "flag", "usage", "expect", "default")
+			spaceLine := fmt.Sprintf(f, "", "", "", "")
+			bar := strings.ReplaceAll(spaceLine, " ", "-")
+			fmt.Println(bar)
+			fmt.Printf(f+"\n", "flag", "usage", "expect", "default")
+			fmt.Println(bar)
 			for k, v := range argHelpMap {
-				fmt.Printf(f, k, v.ArgUsage, v.ValueExpect, v.ArgValue)
+				fmt.Printf(f+"\n", k, v.ArgUsage, v.ValueExpect, v.ArgValue)
 			}
+			fmt.Println(bar)
 		},
 	}
 	return &c, nil
+}
+
+func getFormatArgMap(argHelpMap map[string]OneArg, min int, max int) string {
+	f := ""
+	var tmpList0 = []string{}
+	var tmpList1 = []string{}
+	var tmpList2 = []string{}
+	var tmpList3 = []string{}
+	for k, v := range argHelpMap {
+		tmpList0 = append(tmpList0, k)
+		tmpList1 = append(tmpList1, v.ArgUsage)
+		tmpList2 = append(tmpList2, v.ValueExpect)
+		tmpList3 = append(tmpList3, v.ArgValue)
+	}
+
+	f = fmt.Sprint("| %-", findMaxInRange(tmpList0, min, max), "s "+
+		"| %-", findMaxInRange(tmpList1, min, max), "s ",
+		"| %-", findMaxInRange(tmpList2, min, max), "s ",
+		"| %-", findMaxInRange(tmpList3, min, max), "s ")
+	return f
+}
+
+func findMaxInRange(strs []string, min int, max int) int {
+	tmp := min
+	for _, v := range strs {
+		l := len(v)
+		if l > tmp {
+			tmp = l
+		}
+	}
+	if tmp > max {
+		tmp = max
+	}
+	return tmp
 }
 
 /**
@@ -81,19 +120,19 @@ func GetCommandLineArgMap(argHelpMap map[string]OneArg, args []string) (map[stri
 
 type OneArg struct {
 	/* -p -h 等*/
-	ArgFlag      string `json:"flag"`
+	ArgFlag string `json:"flag"`
 	/* 正则匹配参数 */
 	ValuePattern string `json:"pattern"`
 	/* 封装用户输入 */
-	ArgValue         string `json:"value"`
+	ArgValue string `json:"value"`
 	/* 期望输入 */
-	ValueExpect      string `json:"expect"`
+	ValueExpect string `json:"expect"`
 	/* 显示该flag的用法 */
-	ArgUsage         string `json:"usage"`
+	ArgUsage string `json:"usage"`
 	/* 当不匹配时候，显示的错误信息 */
 	ArgValueErrorMsg string `json:"err"`
 	/*是否必须有值，比如-h显示帮助就不需要，而-p 8888指定端口则必须指定，当必须指定的时候该值为true*/
-	MustHaveValue    bool   `json:"must_have_value"`
+	MustHaveValue bool `json:"must_have_value"`
 }
 
 /**
@@ -124,15 +163,14 @@ func showError(msg error) {
 
 func getFlagValueFromArgs(usage OneArg, i int, args []string) (string, error) {
 	if i >= (len(args) - 1) {
-		return "", errors.New("you have not provide value, info:" +  usage.ArgValueErrorMsg)
+		return "", errors.New("you have not provide value, info:" + usage.ArgValueErrorMsg)
 	}
-
 	userIn := args[i+1]
 
 	if usage.ValuePattern != "" {
 		r := regexp.MustCompile(usage.ValuePattern)
 		if !r.MatchString(userIn) {
-			return "", errors.New( "your input:" + userIn + "' not match pattern:'" + usage.ValuePattern + "', info:" + usage.ArgValueErrorMsg )
+			return "", errors.New("your input:" + userIn + "' not match pattern:'" + usage.ValuePattern + "', info:" + usage.ArgValueErrorMsg)
 		}
 	}
 
