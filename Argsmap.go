@@ -11,12 +11,12 @@ import (
 	"strings"
 )
 
-type commandLineObj struct {
+type CommandLineObj struct {
 	GetCommandLineMap map[string]string
 	ShowHelp          func()
 }
 
-func parseByte(b []byte, args []string) (*commandLineObj, error) {
+func parseByte(b []byte, args []string) (*CommandLineObj, error) {
 	var argHelpMap = make(map[string]OneArg)
 	jserr := json.Unmarshal(b, &argHelpMap)
 	if jserr != nil {
@@ -27,7 +27,7 @@ func parseByte(b []byte, args []string) (*commandLineObj, error) {
 		return nil, errors.New("An error occurred while parsing from map:" + fmt.Sprint(argHelpMap))
 	}
 	f := getFormatArgMap(argHelpMap, 10, 50)
-	c := commandLineObj{
+	c := CommandLineObj{
 		GetCommandLineMap: m,
 		ShowHelp: func() {
 			fmt.Println("Usage:")
@@ -45,14 +45,13 @@ func parseByte(b []byte, args []string) (*commandLineObj, error) {
 	return &c, nil
 }
 
-func NewCommandLineObjByJSON(jsonString string, args []string) (*commandLineObj, error) {
+func NewCommandLineObjByJSON(jsonString string, args []string) (*CommandLineObj, error) {
 	b := []byte(jsonString)
 	return parseByte(b, args)
 }
 
 
-
-func NewCommandLineObj(fileName string, args []string) (*commandLineObj, error) {
+func NewCommandLineObj(fileName string, args []string) (*CommandLineObj, error) {
 	b, err := loadFile(fileName)
 	if err != nil {
 		/* 帮助文件找不到，则手动封装map*/
@@ -61,7 +60,7 @@ func NewCommandLineObj(fileName string, args []string) (*commandLineObj, error) 
 	return parseByte(b, args)
 }
 
-func wrapOnlyArgs(args []string) (*commandLineObj, error) {
+func wrapOnlyArgs(args []string) (*CommandLineObj, error) {
 	var commandLineMap = make(map[string]string)
 	for i := 1; i < len(args); i++ {
 		k:= args[i]
@@ -72,12 +71,12 @@ func wrapOnlyArgs(args []string) (*commandLineObj, error) {
 		}
 		commandLineMap[k] = v
 	}
-	return &commandLineObj{
+	return &CommandLineObj{
 		GetCommandLineMap: commandLineMap,
 		ShowHelp: func() {
 			fmt.Println("Not provide help file.")
 		},
-	}, nil
+	}, errors.New("you have not provide help file yet")
 }
 
 func getFormatArgMap(argHelpMap map[string]OneArg, min int, max int) string {
