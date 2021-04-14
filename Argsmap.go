@@ -14,9 +14,10 @@ import (
 type CommandLineObj struct {
 	GetCommandLineMap map[string]string
 	ShowHelp          func()
+	GetArg            func(string) (string, error)
 }
 
-func parseByte(b []byte, args []string) (*CommandLineObj, error) {
+func parseMap(b []byte, args []string) (*CommandLineObj, error) {
 	var argHelpMap = make(map[string]OneArg)
 	jserr := json.Unmarshal(b, &argHelpMap)
 	if jserr != nil {
@@ -24,7 +25,7 @@ func parseByte(b []byte, args []string) (*CommandLineObj, error) {
 	}
 	m, err := GetCommandLineArgMap(argHelpMap, args)
 	if err != nil {
-		return nil, errors.New("An error occurred when parsing from args:"  + err.Error())
+		return nil, errors.New("An error occurred when parsing from args:" + err.Error())
 	}
 	f := getFormatArgMap(argHelpMap, 7, 100)
 	c := CommandLineObj{
@@ -41,15 +42,20 @@ func parseByte(b []byte, args []string) (*CommandLineObj, error) {
 			}
 			fmt.Println(bar)
 		},
+		GetArg: func(key string) (string, error) {
+			if value, ok := m[key]; ok {
+				return value, nil
+			}
+			return "", errors.New("You have not provide value of " + key)
+		},
 	}
 	return &c, nil
 }
 
 func NewCommandLineObjByJSON(jsonString string, args []string) (*CommandLineObj, error) {
 	b := []byte(jsonString)
-	return parseByte(b, args)
+	return parseMap(b, args)
 }
-
 
 func NewCommandLineObj(fileName string, args []string) (*CommandLineObj, error) {
 	b, err := loadFile(fileName)
@@ -57,15 +63,15 @@ func NewCommandLineObj(fileName string, args []string) (*CommandLineObj, error) 
 		/* 帮助文件找不到，则手动封装map*/
 		return wrapOnlyArgs(args)
 	}
-	return parseByte(b, args)
+	return parseMap(b, args)
 }
 
 func wrapOnlyArgs(args []string) (*CommandLineObj, error) {
 	var commandLineMap = make(map[string]string)
 	for i := 1; i < len(args); i++ {
-		k:= args[i]
+		k := args[i]
 		v := ""
-		if i< len(args) - 1 {
+		if i < len(args)-1 {
 			i++
 			v = args[i]
 		}
@@ -167,7 +173,6 @@ type OneArg struct {
 	/*是否必须有值，比如-h显示帮助就不需要，而-p 8888指定端口则必须指定，当必须指定的时候该值为true*/
 	MustHaveValue bool `json:"must_have_value"`
 }
-
 /**
 为struct添加默认值，该方法会被自动调用
 */
@@ -188,7 +193,6 @@ func loadFile(filePath string) ([]byte, error) {
 		return nil, errors.New("Failed to load file:" + filePath)
 	}
 	return body, nil
-
 }
 
 //func showError(msg error) {
@@ -200,13 +204,11 @@ func getFlagValueFromArgs(usage OneArg, i int, args []string) (string, error) {
 		return "", errors.New("you have not provide value, info:" + usage.ArgValueErrorMsg)
 	}
 	userIn := args[i+1]
-
 	if usage.ValuePattern != "" {
 		r := regexp.MustCompile(usage.ValuePattern)
 		if !r.MatchString(userIn) {
 			return "", errors.New("your input:" + userIn + "' not match pattern:'" + usage.ValuePattern + "', info:" + usage.ArgValueErrorMsg)
 		}
 	}
-
 	return args[i+1], nil
 }
